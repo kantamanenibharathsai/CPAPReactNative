@@ -107,6 +107,57 @@ const Login = () => {
     setShowErrorModal(false);
   };
 
+  // const handleSubmit = async () => {
+  //   const enteredPin = pin.join('');
+  //   // Clear any previous timeout to prevent overlapping actions
+  //   if (timeoutRef.current) {
+  //     clearTimeout(timeoutRef.current);
+  //   }
+  //   setIsLoading(true);
+
+  //   if (enteredPin === '123456') {
+  //     try {
+  //       const db = await getDBConnection();
+  //       await createTables(db);
+  //       await savePinToDb(db, '123456');
+  //       const fileInitialized = await initializeDebugFile();
+  //       if (fileInitialized) {
+  //         appendToDebugFile(`User successfully logged in. ${enteredPin}`);
+  //         setModalMessage('PIN verified successfully!');
+  //       } else {
+  //         setModalMessage(
+  //           'PIN verified and saved, but debug file could not be created or accessed. Please try restarting the app or checking app settings.',
+  //         );
+  //       }
+
+  //       timeoutRef.current = setTimeout(() => {
+  //         setIsLoading(false);
+  //         setShowSuccessModal(true);
+  //       }, 2000);
+  //     } catch (error) {
+  //       appendToDebugFile(`Error during login or PIN save: ${error.message}`);
+  //       setModalMessage(
+  //         'Failed to connect to database or save PIN. Please try again.',
+  //       );
+
+  //       timeoutRef.current = setTimeout(() => {
+  //         setIsLoading(false);
+  //         setShowErrorModal(true);
+  //       }, 2000);
+  //     }
+  //   } else {
+  //     appendToDebugFile(`Invalid PIN entered. ${enteredPin}`);
+  //     setModalMessage('Invalid PIN. Please try again.');
+
+  //     timeoutRef.current = setTimeout(() => {
+  //       setIsLoading(false);
+  //       setShowErrorModal(true);
+  //       setPin(['', '', '', '', '', '']);
+  //       inputRefs.current[0]?.focus();
+  //     }, 2000);
+  //   }
+  // };
+
   const handleSubmit = async () => {
     const enteredPin = pin.join('');
     // Clear any previous timeout to prevent overlapping actions
@@ -123,17 +174,17 @@ const Login = () => {
         const fileInitialized = await initializeDebugFile();
         if (fileInitialized) {
           appendToDebugFile(`User successfully logged in. ${enteredPin}`);
-          setModalMessage('PIN verified successfully!');
         } else {
-          setModalMessage(
-            'PIN verified and saved, but debug file could not be created or accessed. Please try restarting the app or checking app settings.',
+          appendToDebugFile(
+            `User successfully logged in, but debug file could not be created or accessed.`,
           );
         }
 
+        // Display the loading indicator for 2 seconds, then navigate
         timeoutRef.current = setTimeout(() => {
           setIsLoading(false);
-          setShowSuccessModal(true);
-        }, 2000);
+          navigation.navigate('WifiConnecting');
+        }, 1000);
       } catch (error) {
         appendToDebugFile(`Error during login or PIN save: ${error.message}`);
         setModalMessage(
@@ -143,7 +194,7 @@ const Login = () => {
         timeoutRef.current = setTimeout(() => {
           setIsLoading(false);
           setShowErrorModal(true);
-        }, 2000);
+        }, 1000);
       }
     } else {
       appendToDebugFile(`Invalid PIN entered. ${enteredPin}`);

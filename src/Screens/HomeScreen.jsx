@@ -157,10 +157,8 @@ const COMMON_STYLES = {
 
 const HomeScreen = () => {
   const navigation = useNavigation();
-
   const scrollViewRef = useRef(null);
   const hasScrolledOnMount = useRef(false);
-
   const [displayUser, setDisplayUser] = useState('Bharath');
   const [db, setDb] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -190,22 +188,16 @@ const HomeScreen = () => {
         const connection = await getDBConnection();
         await createTables(connection);
         setDb(connection);
-      } catch (error) {
-        console.error('Database Error:', error);
-      }
+      } catch (error) {}
     };
     initializeDatabase();
   }, []);
 
   useEffect(() => {
     if (!db) return;
-
     const sock = dgram.createSocket('udp4');
-
     sock.on('listening', () => {});
-
     sock.bind(UDP_CONFIG.LOCAL_PORT);
-
     sock.on('message', async msg => {
       const receivedHex = msg.toString('hex');
       udpBuffer += receivedHex;
@@ -234,10 +226,7 @@ const HomeScreen = () => {
         }
       }
     });
-
-    sock.on('error', err => {
-      console.error('UDP Error:', err);
-    });
+    sock.on('error', err => {});
     sock.on('close', () => {});
 
     return async () => {
@@ -333,7 +322,6 @@ const HomeScreen = () => {
           setSetValues(blankSetValues);
         }
       } catch (error) {
-        console.error('Failed to fetch data for date:', error);
         setHasDataForSelectedDate(false);
       } finally {
         setLoading(false);
@@ -429,45 +417,22 @@ const HomeScreen = () => {
     setShowLogoutModal(true);
   };
 
-  // const confirmLogout = async () => {
-  //   await AsyncStorage.removeItem('userEmail');
-  //   await AsyncStorage.removeItem('userName');
-  //   await AsyncStorage.setItem('isLoggedIn', JSON.stringify(false));
-  //   let databaseConnection = null;
-  //   try {
-  //     databaseConnection = await getDBConnection();
-  //     await deletePinFromDb(databaseConnection);
-  //     navigation.reset({
-  //       index: 0,
-  //       routes: [{ name: 'Welcome' }],
-  //     });
-  //   } catch (error) {}
-  // };
-
   const confirmLogout = async () => {
     try {
-      // 1. Disconnect from WizFi (auto/manual safe!)
       await handleWizFiDisconnection();
-      // 2. Clear AsyncStorage immediately
       AsyncStorage.removeItem('userEmail');
       AsyncStorage.removeItem('userName');
       AsyncStorage.setItem('isLoggedIn', JSON.stringify(false));
-      // 3. Clear database pin (async, don't wait)
       getDBConnection()
         .then(databaseConnection => {
           deletePinFromDb(databaseConnection);
         })
-        .catch(dbError => {
-          console.log('Database cleanup error:', dbError);
-        });
-      // 4. Navigate to welcome screen immediately
+        .catch(dbError => {});
       navigation.reset({
         index: 0,
         routes: [{ name: 'Welcome' }],
       });
     } catch (error) {
-      console.error('Logout error:', error);
-      // Even if error, still navigate away
       navigation.reset({
         index: 0,
         routes: [{ name: 'Welcome' }],
@@ -505,117 +470,42 @@ const HomeScreen = () => {
     );
   };
 
-  // --- Helper: show WiFi toggle alert (if needed) ---
-  const showWiFiToggleAlert = () => {
-    Alert.alert(
-      'Disconnect from WiFi',
-      'Please turn OFF your WiFi to disconnect from the WizFi network, then turn it back ON.',
-      [
-        {
-          text: 'Open WiFi Settings',
-          onPress: () => {
-            Linking.sendIntent('android.settings.WIFI_SETTINGS').catch(() => {
-              Linking.openSettings();
-            });
-          },
-        },
-        {
-          text: 'Done',
-          style: 'default',
-          onPress: () => {
-            // User confirmed they've toggled WiFi manually
-            console.log('User confirmed manual WiFi toggle');
-          },
-        },
-      ],
-      { cancelable: false },
-    );
-  };
-
-  // --- Helper: check if current connection is manual or app-controlled ---
-  const getWiFiConnectionType = async ssid => {
-    try {
-      const wifiList = await WifiManager.loadWifiList();
-      const savedNetwork = wifiList.find(network => network.SSID === ssid);
-      return savedNetwork ? 'app_controlled' : 'manual';
-    } catch (error) {
-      console.log('Cannot determine connection type:', error);
-      return 'unknown';
-    }
-  };
-
-  // --- Main: enhanced WizFi disconnection ---
-const handleWizFiDisconnection = async () => {
-    // Helper function to perform forced disconnection attempts
+  const handleWizFiDisconnection = async () => {
     const performForceDisconnect = async () => {
       try {
-        console.log('Attempting to force disconnect from WiFi...');
         await WifiManager.disconnect();
         await new Promise(resolve => setTimeout(resolve, 800));
-        console.log('Force disconnect attempted');
-      } catch (error) {
-        console.log('Force disconnect failed:', error.message);
-      }
-
+      } catch (error) {}
       try {
-        console.log('Attempting dummy connection to force disconnect...');
-        await WifiManager.connectToProtectedSSID('__DUMMY_DISCONNECT__', 'dummy', false, false);
-      } catch (error) {
-        // Expected to fail, but should break connection
-        console.log('Dummy connection failed as expected:', error.message);
-      }
-      console.log('WiFi disconnection attempts completed');
+        await WifiManager.connectToProtectedSSID(
+          '__DUMMY_DISCONNECT__',
+          'dummy',
+          false,
+          false,
+        );
+      } catch (error) {}
     };
 
     try {
       const currentSSID = await WifiManager.getCurrentWifiSSID();
-      console.log('Current SSID:', currentSSID);
-
       if (!currentSSID || !currentSSID.startsWith('WizFi')) {
-        console.log('Not connected to a WizFi network');
         return;
       }
-      
-      // Since connectionType is unreliable, we'll try to disconnect regardless.
-      console.log('Attempting to remove and disconnect all WizFi networks...');
-
       try {
-        // First, attempt to remove the currently connected network.
         await WifiManager.removeWifiNetwork(currentSSID);
         await new Promise(resolve => setTimeout(resolve, 2000));
         const afterRemoveSSID = await WifiManager.getCurrentWifiSSID();
         if (!afterRemoveSSID || !afterRemoveSSID.startsWith('WizFi')) {
-          console.log('Connected network was successfully removed.');
           return;
         }
-      } catch (error) {
-        console.log('Network removal failed, proceeding with force disconnect attempts:', error.message);
-      }
-
-      // Perform a forced disconnection as a fallback
+      } catch (error) {}
       await performForceDisconnect();
-
-      // If still connected, prompt user
       const finalSSID = await WifiManager.getCurrentWifiSSID();
       if (finalSSID && finalSSID.startsWith('WizFi')) {
         showManualDisconnectionAlert();
       }
-
-    } catch (error) {
-      console.log('WiFi disconnection process error:', error.message);
-    }
+    } catch (error) {}
   };
-  // You can also add this check before attempting disconnection:
-  // const connectionType = await checkWiFiConnectionType(currentSSID);
-  // console.log('Connection type:', connectionType);
-
-  // Helper function for WizFi-specific disconnection
-
-  // Usage in confirmLogout:
-  // const wizfiDisconnectSuccess = await disconnectFromWizFiOnly(currentSSID);
-
-  // You can replace the WiFi disconnect section in confirmLogout with:
-  // const disconnectSuccess = await forceWifiDisconnect(currentSSID);
 
   const renderMetricCard = (
     image,
