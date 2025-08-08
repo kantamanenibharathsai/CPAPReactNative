@@ -1141,18 +1141,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
-    alignItems: 'center', // Center content
+    alignItems: 'center',
   },
   modalTitle: {
     color: '#fff',
     fontSize: 16,
-    marginBottom: 5, // Reduced margin
+    marginBottom: 5,
     fontWeight: 'bold',
     textAlign: 'center',
   },
   modalMessage: {
     color: '#fff',
-    fontSize: 14, // Slightly smaller
+    fontSize: 14,
     textAlign: 'center',
   },
   input: {
